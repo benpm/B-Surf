@@ -27,6 +27,7 @@
 //
 //
 
+#include <cstring>
 #include "yocto_opengl.h"
 
 #include <cassert>

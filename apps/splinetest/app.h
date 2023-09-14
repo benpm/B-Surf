@@ -255,7 +255,7 @@ struct App {
     }
   }
 
-  bezier_params bezier_params = {};
+  bezier_params bparams = {};
   string        filename      = "data/mesh.obj";
   string        testname      = "tests/loop-bunny.json";
   string        comparison    = "mesh";
@@ -288,7 +288,7 @@ struct App {
   shade_material* mesh_material   = nullptr;
   shade_shape*    mesh_shape      = nullptr;
   shade_camera*   camera          = {};
-  shade_params    shade_params{};
+  shade_params sparams{};
   float           camera_focus;
   shape_bvh       bvh = {};
 
@@ -396,7 +396,7 @@ inline void update_camera_info(App& app, const gui_input& input) {
 
   app.matrices.view       = frame_to_mat(inverse(camera.frame));
   app.matrices.projection = perspective_mat(
-      camera_yfov, camera.aspect, app.shade_params.near, app.shade_params.far);
+      camera_yfov, camera.aspect, app.sparams.near, app.sparams.far);
   app.matrices.projection_view = app.matrices.projection * app.matrices.view;
 }
 

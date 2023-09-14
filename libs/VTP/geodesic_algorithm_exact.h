@@ -1,6 +1,7 @@
 #ifndef GEODESIC_ALGORITHM_EXACT
 #define GEODESIC_ALGORITHM_EXACT
 
+#include <cstring>
 #include "geodesic_algorithm_base.h"
 #include "geodesic_algorithm_exact_elements.h"
 #include "geodesic_memory.h"

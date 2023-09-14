@@ -3,6 +3,7 @@
 #include <GLFW/glfw3.h>
 
 #include <cassert>
+#include <stdexcept>
 #include <unordered_map>
 
 namespace window {

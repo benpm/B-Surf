@@ -29,8 +29,8 @@ void set_common_uniforms(const App& app, const ogl_program* program) {
   set_uniform(program, "projection", projection);
   set_uniform(program, "eye", app.camera->frame.o);
   set_uniform(program, "envlight", (int)app.envlight);
-  set_uniform(program, "gamma", app.shade_params.gamma);
-  set_uniform(program, "exposure", app.shade_params.exposure);
+  set_uniform(program, "gamma", app.sparams.gamma);
+  set_uniform(program, "exposure", app.sparams.exposure);
   // set_uniform(program, "size", app.line_size);
   if (app.scene->environments.size()) {
     auto& env = app.scene->environments.front();
@@ -47,7 +47,7 @@ void draw_scene(const App& app, const vec4i& viewport) {
   clear_ogl_framebuffer(vec4f{0, 0, 0, 1});
 
   // Draw mesh and environment.
-  draw_scene(app.scene, app.camera, viewport, app.shade_params);
+  draw_scene(app.scene, app.camera, viewport, app.sparams);
 
   if (app.show_points) {
     auto program = &app.shaders.at("points");
@@ -97,7 +97,7 @@ void draw_scene(const App& app, const vec4i& viewport) {
           : (2 * yocto::atan(app.camera->film / (2 * app.camera->lens)));
   auto view       = frame_to_mat(inverse(app.camera->frame));
   auto projection = perspective_mat(
-      camera_yfov, camera_aspect, app.shade_params.near, app.shade_params.far);
+      camera_yfov, camera_aspect, app.sparams.near, app.sparams.far);
   if (app.temp_levels > 0) draw_shape(app.temp_points[app.temp_levels]);
   if (app.gpu_shapes.find("vector_field") != app.gpu_shapes.end())
     gpu::draw_shape(app.gpu_shapes.at("vector_field"),
@@ -195,7 +195,7 @@ void process_gui_input(App& app, gui_window* win) {
   //   if (app.spline().control_points.size() < 4) {
   //     //      if (!load_bezier_params(app.testname,
   //     app.spline().control_points,
-  //     //              app.bezier_params, app.error)) {
+  //     //              app.bparams, app.error)) {
   //     //        print_fatal(app.error);
   //     //      }
   //     // TODO(giacomo): restore loading tests
@@ -331,9 +331,9 @@ void process_key_input(App& app, const gui_input& input) {
         auto curve_id = (app.input().selected_control_point / 3);
         curve_id      = clamp(curve_id, 0, (int)app.spline().curves.size());
         auto polygon  = get_control_polygon(app.spline(), curve_id);
-        if (app.bezier_params.algorithm ==
+        if (app.bparams.algorithm ==
                 spline_algorithm::de_casteljau_uniform ||
-            app.bezier_params.algorithm ==
+            app.bparams.algorithm ==
                 spline_algorithm::de_casteljau_adaptive)
           std::tie(left, right) = insert_point(app.mesh, polygon, 0.5);
         else
@@ -341,7 +341,7 @@ void process_key_input(App& app, const gui_input& input) {
               {app.spline().control_points[0], app.spline().control_points[1],
                   app.spline().control_points[2],
                   app.spline().control_points[3]},
-              app.input().parameter_t, app.bezier_params);
+              app.input().parameter_t, app.bparams);
         for (auto& curve : spline.curves) {
           clear_shape(curve.shape);
           clear_shape(curve.tangents[0].shape);
@@ -518,7 +518,7 @@ bool process_user_input(App& app, const gui_input& input) {
       for (auto& spline : app.splines()) {
         auto angle = drag.x * 0.1;
         rotate_spline(app.mesh, spline, angle);
-        auto params = app.bezier_params;
+        auto params = app.bparams;
         params.subdivisions += 1;
         params.precision += 1;
       }
@@ -531,7 +531,7 @@ bool process_user_input(App& app, const gui_input& input) {
       for (auto& spline : app.splines()) {
         auto scaling = clamp(1 + drag.y * 0.1f, 0.9f, 1.1f);
         scale_spline(app.mesh, spline, scaling);
-        auto params = app.bezier_params;
+        auto params = app.bparams;
         params.subdivisions += 1;
         params.precision += 1;
       }
@@ -547,7 +547,7 @@ bool process_user_input(App& app, const gui_input& input) {
         for (auto& spline : app.splines()) {
           translate_spline(app.mesh, spline, point);
 
-          auto params = app.bezier_params;
+          auto params = app.bparams;
           params.subdivisions += 1;
           params.precision += 1;
         }
@@ -574,7 +574,7 @@ bool process_user_input(App& app, const gui_input& input) {
 
     if (app.input().active_control_point != -1) {
       auto selected = app.input().active_control_point;
-      auto params   = app.bezier_params;
+      auto params   = app.bparams;
       params.subdivisions += 1;
       params.precision += 1;
       auto& spline = app.spline();
@@ -647,8 +647,8 @@ void update_app(App& app, const gui_input& input) {
   auto f = [&](int i) {
     auto& spline   = app.splines()[tasks[i].x];
     auto  curve_id = tasks[i].y;
-    // update_curve_shape(spline, curve_id, app.mesh, app.bezier_params);
-    update_curve_shape(spline, curve_id, app.mesh, app.bezier_params,
+    // update_curve_shape(spline, curve_id, app.mesh, app.bparams);
+    update_curve_shape(spline, curve_id, app.mesh, app.bparams,
         app.quadric_curve, app.use_vector_heat);
   };
 
@@ -854,7 +854,7 @@ void draw(const gui_input& input, void* data) {
   if (draw_button(widget, "Save test")) {
     save_editing(app, app.testname);
     // if (!save_bezier_params(app.testname, app.spline().control_points,
-    //         app.bezier_params, app.error))
+    //         app.bparams, app.error))
     //   print_fatal(app.error);
   }
   continue_line(widget);
@@ -862,7 +862,7 @@ void draw(const gui_input& input, void* data) {
     load_editing(app, app.testname);
     //      if (!load_bezier_params(app.testname,
     //      app.spline().control_points,
-    //              app.bezier_params, app.error))
+    //              app.bparams, app.error))
     //        print_fatal(app.error);
     // TODO(giacomo): restore loading tests
   }
@@ -965,7 +965,7 @@ void draw(const gui_input& input, void* data) {
           add_path_shape(app, L2, 0.0010f * app.line_size, {0, 0, 1});
 
         spline.curves_to_update.insert(j);
-        update_curve_shape(spline, j, app.mesh, app.bezier_params, false);
+        update_curve_shape(spline, j, app.mesh, app.bparams, false);
       }
     }
 
@@ -980,7 +980,7 @@ void draw(const gui_input& input, void* data) {
       for (auto j = 0; j < vertices.size(); ++j) {
         try {
           auto bezier = flipout::compute_bezier_curve(
-              *app.mesh.flipout, vertices[j], app.bezier_params.subdivisions);
+              *app.mesh.flipout, vertices[j], app.bparams.subdivisions);
           auto curr_pos = generate_polyline_from_positions(app.mesh,
               flipout::path_positions(bezier.get()), points[j][0].face);
 
@@ -1105,12 +1105,12 @@ void draw(const gui_input& input, void* data) {
   //   //   }
   // }
   draw_separator(widget);
-  if (draw_combobox(widget, "algorithm", (int&)app.bezier_params.algorithm,
+  if (draw_combobox(widget, "algorithm", (int&)app.bparams.algorithm,
           spline_algorithm_names)) {
     update_all_splines(app);
   }
-  draw_slider(widget, "subdivisions", app.bezier_params.subdivisions, 1, 10);
-  draw_slider(widget, "precision", app.bezier_params.precision, 0, 1.f);
+  draw_slider(widget, "subdivisions", app.bparams.subdivisions, 1, 10);
+  draw_slider(widget, "precision", app.bparams.precision, 0, 1.f);
 
   if (draw_slider(widget, "t parameter", app.input().parameter_t, 0.0f, 1.0f)) {
     if (app.added_paths.size() != 0) {
@@ -1131,9 +1131,9 @@ void draw(const gui_input& input, void* data) {
       curve_id      = clamp(curve_id, 0, (int)app.spline().curves.size());
       auto polygon  = get_control_polygon(app.spline(), curve_id);
       auto curve    = app.spline().curves[curve_id];
-      if (app.bezier_params.algorithm ==
+      if (app.bparams.algorithm ==
               spline_algorithm::de_casteljau_uniform ||
-          app.bezier_params.algorithm ==
+          app.bparams.algorithm ==
               spline_algorithm::de_casteljau_adaptive) {
         if (!app.show_construction)
           app.input().eval_point = eval_bezier_point(
@@ -1168,14 +1168,14 @@ void draw(const gui_input& input, void* data) {
           }
         }
 
-      } else if (app.bezier_params.algorithm ==
+      } else if (app.bparams.algorithm ==
                      spline_algorithm::subdivision_uniform ||
-                 app.bezier_params.algorithm ==
+                 app.bparams.algorithm ==
                      spline_algorithm::subdivision_adaptive) {
         if (!app.show_construction)
           app.input().eval_point = eval_spline_point(
-              app.mesh, polygon, app.bezier_params, app.input().parameter_t);
-      } else if (app.bezier_params.algorithm ==
+              app.mesh, polygon, app.bparams, app.input().parameter_t);
+      } else if (app.bparams.algorithm ==
                  spline_algorithm::de_casteljau_classic) {
         app.show_points      = false;
         auto [paths, points] = dc_classic_construction(
@@ -1275,7 +1275,7 @@ void draw(const gui_input& input, void* data) {
       auto new_control_points = add_points_shape(
           app, app.control_points, 0.003, {0, 0, 1});
       // app.eval_points = eval_spline_point(
-      //     app.mesh, polygon, app.bezier_params, 20);
+      //     app.mesh, polygon, app.bparams, 20);
     }
   }
   // draw_checkbox(widget, "Quadric Curve", app.quadric_curve);
@@ -1299,7 +1299,7 @@ void draw(const gui_input& input, void* data) {
 
       app.added_points.clear();
     }
-    if (app.bezier_params.algorithm == spline_algorithm::subdivision_uniform) {
+    if (app.bparams.algorithm == spline_algorithm::subdivision_uniform) {
       // control polygon
       auto [paths, points] = LR_algorithm(app.mesh, polygon);
       auto rgb             = hsv_to_rgb({app.control_polygon_h / 360.f,
@@ -1340,7 +1340,7 @@ void draw(const gui_input& input, void* data) {
         add_path_shape(app, paths[1][i], 0.0015 * app.line_size, rgb);
       }
       add_points_shape(app, points[1], 0.0030 * app.line_size, rgb);
-    } else if (app.bezier_params.algorithm ==
+    } else if (app.bparams.algorithm ==
                spline_algorithm::de_casteljau_uniform) {
       auto curve_id = (app.input().selected_control_point / 3);
       curve_id      = clamp(curve_id, 0, (int)app.spline().curves.size());
@@ -1413,9 +1413,9 @@ void draw(const gui_input& input, void* data) {
   //    draw_checkbox(widget, "enforce tangents",
   //    app.input().enforce_tangents);
   draw_checkbox(widget, "Use Vector Heat", app.use_vector_heat);
-  // draw_checkbox(widget, "parallel", app.bezier_params.parallel);
+  // draw_checkbox(widget, "parallel", app.bparams.parallel);
   draw_checkbox(widget, "show edges", app.show_edges);
-  // app.shade_params.faceted = app.show_edges;
+  // app.sparams.faceted = app.show_edges;
   if (draw_checkbox(widget, "show points", app.show_control_points)) {
     if (app.show_control_points) {
       if (app.input().selected_control_point != -1) {

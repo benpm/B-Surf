@@ -161,13 +161,13 @@ inline vector<mesh_point> bezier_tree_points(
   return points;
 }
 
-std::array<bezier_segment, 2> insert_point(
+std::tuple<bezier_segment, bezier_segment> insert_point(
     const bezier_mesh& mesh, const bezier_segment& polygon, float t0);
 
-std::array<quadratic_bezier_segment, 2> insert_point(
+std::tuple<quadratic_bezier_segment, quadratic_bezier_segment> insert_point(
     const bezier_mesh& mesh, quadratic_bezier_segment& polygon, float t0);
 
-std::array<bezier_segment, 2> insert_point_spline(const bezier_mesh& mesh,
+std::tuple<bezier_segment, bezier_segment> insert_point_spline(const bezier_mesh& mesh,
     const bezier_segment& polygon, const float& t0,
     const bezier_params& params);
 

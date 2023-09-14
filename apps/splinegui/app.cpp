@@ -512,10 +512,10 @@ void init_gpu(App& app, bool envlight) {
       app.scene, {0, 0, 0}, {0.9, 0.9, 0.9}, 0.04, 0, 0.4);
   add_instance(app.scene, identity3x4f, app.mesh_shape, app.mesh_material);
 
-  app.shade_params.hide_environment = true;
-  app.shade_params.exposure         = -0.5;
-  app.shade_params.background       = {1, 1, 1, 1};
-  app.shade_params.lighting         = envlight ? shade_lighting_type::envlight
+  app.sparams.hide_environment = true;
+  app.sparams.exposure         = -0.5;
+  app.sparams.background       = {1, 1, 1, 1};
+  app.sparams.lighting         = envlight ? shade_lighting_type::envlight
                                                : shade_lighting_type::eyelight;
 
   init_scene(app.scene, true);

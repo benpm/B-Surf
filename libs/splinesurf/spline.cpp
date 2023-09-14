@@ -842,7 +842,7 @@ mesh_point eval_spline_point(const bezier_mesh& mesh,
 
   return de_boor(mesh, leaf, knots, t0);
 }
-std::array<bezier_segment, 2> insert_point(
+std::tuple<bezier_segment, bezier_segment> insert_point(
     const bezier_mesh& mesh, const bezier_segment& polygon, float t0) {
   auto t_start = 0.f;
   auto t_end   = 1.f;
@@ -919,7 +919,7 @@ std::array<bezier_segment, 2> insert_point(
   return {segment_left, segment_right};
 }
 
-std::array<quadratic_bezier_segment, 2> insert_point(
+std::tuple<quadratic_bezier_segment, quadratic_bezier_segment> insert_point(
     const bezier_mesh& mesh, quadratic_bezier_segment& polygon, float t0) {
   quadratic_bezier_segment left = {}, right = {};
   auto                     Q0 = geodesic_lerp(mesh, polygon[0], polygon[1], t0);
@@ -929,7 +929,7 @@ std::array<quadratic_bezier_segment, 2> insert_point(
   right                       = {Q, Q1, polygon[2]};
   return {left, right};
 }
-std::array<bezier_segment, 2> insert_point_spline(const bezier_mesh& mesh,
+std::tuple<bezier_segment, bezier_segment> insert_point_spline(const bezier_mesh& mesh,
     const bezier_segment& polygon, const float& t0,
     const bezier_params& params) {
   // Go down the tree and find the leaf node containing the point.
@@ -979,9 +979,9 @@ std::array<bezier_segment, 2> insert_point_spline(const bezier_mesh& mesh,
       result[1] = {right[0], Pp1, Pp2, polygon[3]};
     }
   }
-  return result;
+  return {result[0], result[1]};
 }
-std::array<bezier_segment, 2> insert_point_old(
+std::tuple<bezier_segment, bezier_segment> insert_point_old(
     const bezier_mesh& mesh, bezier_tree& tree, float t0) {
   // Go down the tree and find the leaf node containing the point.
   int leaf = 0;
