@@ -479,9 +479,6 @@ vector<mesh_point> spline_control_points(const geodesic_solver& solver,
     const vector<vector<float>>& angles,
     const vector<mesh_point>&    control_points);
 
-vector<vector<float>> knots_insertion(const vector<float>& t,
-    const vector<float>& u, const int k, const int m, const int n);
-
 mesh_point optimal_seed(
     const vector<mesh_point>& control_points, const vector<float>& weights);
 
@@ -496,12 +493,6 @@ mesh_point gradient_descent(const vector<vec3i>& triangles,
     const vector<float>& weights, const mesh_point& from);
 
 Eigen::VectorXd wrapper(const vector<float>& f);
-
-vector<mesh_point> bezier_through_spline_subdivisions(
-    const geodesic_solver& solver, const vector<vec3i>& triangles,
-    const vector<vec3f>& positions, const vector<vec3i>& adjacencies,
-    const vector<vector<int>>& v2t, const vector<vector<float>>& angles,
-    const vector<mesh_point>& control_points);
 
 vector<vector<vec3f>> gradients_inside_cell(const vector<vec3i>& triangles,
     const vector<vec3f>& positions, const vector<vec3i>& adjacencies,

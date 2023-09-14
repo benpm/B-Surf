@@ -101,7 +101,7 @@ void init_arraybuffer(
   if constexpr (std::is_floating_point<T>::value) {
     buffer.is_index = false;
   } else {
-    buffer.is_index = !std::is_floating_point<typeof(array[0][0])>::value;
+    buffer.is_index = !std::is_floating_point<decltype(array[0][0])>::value;
   }
   init_arraybuffer(buffer, array.data(), dynamic);
 }
